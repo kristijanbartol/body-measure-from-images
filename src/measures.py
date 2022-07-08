@@ -3,7 +3,7 @@ import numpy as np
 import trimesh
 import torch
 
-from model import create_model, set_shape
+from .smpl import create_model, set_shape
     
     
 class MeasurementType():
@@ -271,8 +271,8 @@ class MeshMeasurements():
     
     def __init__(
             self, 
+            gender: str,
             shape: torch.tensor, 
-            gender: str = 'neutral',
             auto_flush: bool = True
         ) -> None:
         ''' Mesh measurements constructor.
@@ -393,7 +393,8 @@ class MeshMeasurements():
         value = self._norm_measure(value) if normalize else value
         return value
     
-    def get_all_measures(self, type: str = None) -> List[float]:
+    @property
+    def all(self, type: str = None) -> List[float]:
         ''' Get all body measurements (their common type is optional).
         
             Note that `self.verts` and `self.faces` are relatively large.
@@ -529,11 +530,21 @@ class MeshMeasurements():
     def all_names() -> List[str]:
         '''Return the list of all the body measurement names.'''
         return list(MeshMeasurements._LABELS_TO_NAMES.values())
+    
+    @property
+    def names(self) -> List[str]:
+        '''(Property) Return the list of all the body measurement names.'''
+        return list(self._LABELS_TO_NAMES.values())
 
     @staticmethod
     def all_labels() -> List[str]:
         '''Return the list of all the body measurement labels.'''
         return list(MeshMeasurements._NAMES_TO_LABELS.values())
+    
+    @property
+    def labels(self) -> List[str]:
+        '''(Property) Return the list of all the body measurement labels.'''
+        return list(self._NAMES_TO_LABELS.values())
     
     @staticmethod
     def all_full_names() -> List[str]:
@@ -546,26 +557,49 @@ class MeshMeasurements():
         corresponding_types = MeshMeasurements._DEFAULT_TYPES.values()
         return [f'{x}_{y}' for (x, y) in zip(_all_names, corresponding_types)]
     
+    def __getattr__(self, label: str):
+        if ord(label) >= ord('A') and ord(label) <= ord('P'):
+            value_idx = self.all_labels().index(label)
+            return self._all_measures[None][value_idx]
+        else:
+            print('WARNING: Unknown attribute.')
+            return 0.
+    
     def __str__(self) -> str:
         ''' Return string representation when print(measurements) is called.
         
             Returns a multi-line string where each line is in the form
             `f{name}_{default_type}: {value * 100:.2f}cm`.
         '''
-        values = self.get_all_measures()
-        names = self.all_names()
-        default_types = list(self._DEFAULT_TYPES.values())
+        values = self.all
+        names = self.names
+        _default_types = list(self._DEFAULT_TYPES.values())
         measures_str = ''
         for idx in range(len(values)):
-            full_measure_name = f'{names[idx]}_{default_types[idx]}'
+            full_measure_name = f'{names[idx]}_{_default_types[idx]}'
             measures_str += f'{full_measure_name}: {values[idx] * 100.:.2f}cm\n'
         return measures_str
+
+
+class MeasurementsCollection():
+    
+    def __init__(self, measurement_objects: List[MeshMeasurements]):
+        self._objects = measurement_objects
+        self.all = np.array([x.all for x in measurement_objects])
+        
+    def __getattr__(self, label: str) -> np.ndarray:
+        if ord(label) >= ord('A') and ord(label) <= ord('P'):
+            return [x[label] for x in self._objects]
+        else:
+            print('WARNING: Unknown attribute.')
+            return [0.] * self.all.shape[0]
 
 
 if __name__ == '__main__':
     betas = torch.zeros((1, 10), dtype=torch.float32)
     gender = 'male'
     measurements = MeshMeasurements(shape=betas, gender=gender)
-    print(measurements.get_all_measures())
+    print(measurements.all)
     print(measurements)
     print(measurements.volume)
+    print(measurements.A)
