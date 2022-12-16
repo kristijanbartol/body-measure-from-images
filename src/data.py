@@ -1,106 +1,105 @@
-from dataclasses import dataclass, fields
 import os
 import torch
-from typing import Union
-import cv2
+from typing import Tuple
 import numpy as np
 
-from src.features import count_human_pixels, get_height_in_image
+if __name__ == '__main__':
+    import sys
+    sys.path.append('/media/kristijan/kristijan-hdd-ex/ShapeFromImages')
+
+from src.features import Features, FeaturesCollection
 from src.measures import MeasurementsCollection, MeshMeasurements
 
 
 DATA_ROOT = './data/generated/'
 BETAS_PATH = os.path.join(DATA_ROOT, 'betas.npy')
 GENDERS_PATH = os.path.join(DATA_ROOT, 'genders.npy')
-RGB_DIR = os.path.join(DATA_ROOT, 'rgb/')
-SEG_DIR = os.path.join(DATA_ROOT, 'seg/')
-
-INT_TO_GENDER = {
-    1: 'male',
-    2: 'female'
-}
-
-
-@dataclass
-class TrainingData:
-    front_densities: np.array
-    side_densities: np.array
-    measures: MeshMeasurements
-
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-    def get(self, key, default=None):
-        return getattr(self, key, default)
-
-    def __iter__(self):
-        return self.keys()
-
-    def keys(self):
-        keys = [t.name for t in fields(self)]
-        return iter(keys)
-
-    def values(self):
-        values = [getattr(self, t.name) for t in fields(self)]
-        return iter(values)
-
-    def items(self):
-        data = [(t.name, getattr(self, t.name)) for t in fields(self)]
-        return iter(data)
-
-
-def extract_input(sample_idx: int) -> Union[float, float]:
-    fname_front = f'{sample_idx:04d}_front.png'
-    fname_side = f'{sample_idx:04d}_side.png'
-    seg_front = cv2.imread(os.path.join(SEG_DIR, fname_front))
-    seg_side = cv2.imread(os.path.join(SEG_DIR, fname_side))
-
-    num_human_pixels_front = count_human_pixels(seg_front)
-    num_human_pixels_side = count_human_pixels(seg_side)
-    height_in_front_image = get_height_in_image(seg_front)
-    height_in_side_image = get_height_in_image(seg_side)
     
-    seg_density_front = float(num_human_pixels_front) / float(height_in_front_image)
-    seg_density_side = float(num_human_pixels_side) / float(height_in_side_image)
+
+class DatasetSpecs():
     
-    return seg_density_front, seg_density_side
-
-
-def extract_measures(
-        gender: str, 
-        betas: np.ndarray
-    ) -> MeshMeasurements:
-    return MeshMeasurements(gender=gender, shape=betas)
-
-
-def extract_training_data(data_type: str ='gt') -> TrainingData:
-    all_betas = np.load(BETAS_PATH)
-    all_genders = np.load(GENDERS_PATH)
+    def __init__(
+            self,
+            gt_features: bool = True,
+            feature_type: str = 'density',
+            seg_position: str = 'both',
+            output_set: str = 'all'     # all_measures
+        ) -> None:
+        self.gt_features = gt_features      # bool
+        self.feature_type = feature_type    # density, slices, or fragments
+        self.seg_position = seg_position    # front, side, or both
+        self.output_set = output_set        # all, volume, or (A, B, ...)
     
-    front_densities = []
-    side_densities = []
-    measurements_collection = []
-
-    for sample_idx in range(all_betas.shape[0]):
-        betas = torch.tensor(all_betas[sample_idx], dtype=torch.float32).unsqueeze(0)
-        gender = INT_TO_GENDER[all_genders[sample_idx]]
-        
-        density_front, density_side = extract_input(sample_idx)
-        
-        front_densities.append(density_front)
-        side_densities.append(density_side)
-        
-        measurements_collection.append(extract_measures(gender, betas))
-        
-    front_densities = np.array(front_densities)
-    side_densities = np.array(side_densities)
-
-    return TrainingData(
-        front_densities=front_densities,
-        side_densities=side_densities,
-        measures=MeasurementsCollection(measurements_collection)
-    )
     
+class Dataset():
+    
+    def __init__(
+            self, 
+            are_gt_features: bool = True,
+            silh_model: str = Features.POINTREND,
+            feature_type: str = 'density'
+        ) -> None:
+        self.training_data = self._extract_data(
+            are_gt_features, silh_model)
+    
+    @staticmethod
+    def _extract_data(
+            are_gt: bool,
+            silh_model: str
+        ) -> Tuple[FeaturesCollection, MeasurementsCollection]:
+        all_betas = np.load(BETAS_PATH)
+        all_genders = np.load(GENDERS_PATH)
+        
+        features_array = []
+        measures_array = []
+
+        for sample_idx in range(all_betas.shape[0]):
+            features_array.append(
+                Features(
+                    sample_idx=sample_idx,
+                    are_gt=are_gt,
+                    silh_model=silh_model)
+                )
+            measures_array.append(
+                MeshMeasurements(
+                    gender=MeshMeasurements.INT_TO_GENDER[all_genders[sample_idx]], 
+                    shape=torch.tensor(all_betas[sample_idx], 
+                                    dtype=torch.float32).unsqueeze(0))
+                )
+
+        return (
+            FeaturesCollection(features_array), 
+            MeasurementsCollection(measures_array)
+        )
+        
+    def get_data(
+            self, 
+            feature_type: str = 'density',
+            seg_position: str = 'both',
+            output_set: str = 'all'
+        ) -> Tuple[np.ndarray, np.ndarray]:
+        features = self.training_data[0].seg_density
+        if seg_position == 'front':
+            features = features[:, Features.POSITION_INDICES['front']]
+        elif seg_position == 'side':
+            features = features[:, Features.POSITION_INDICES['side']]
+        else:
+            if not seg_position == 'both':
+                print('WARNING: Wrong seg_position provided, returning all.')
+        
+        measures = self.training_data[1]
+        if output_set == 'volume':
+            measures = measures.volume
+        elif len(output_set) == 1:
+            measures = getattr(measures, output_set)
+        elif output_set == 'all':
+            measures = measures.all
+        else:
+            print('WARNING: Wrong output set label, returning all.')
+            measures = measures.all
+        
+        return features, measures
+
 
 if __name__ == '__main__':
-    gt_data = extract_training_data()
+    dataset = Dataset()

@@ -1,0 +1,5 @@
+model_files/
+dataset/
+.venv/
+.ipynb_checkpoints
+__pycache__

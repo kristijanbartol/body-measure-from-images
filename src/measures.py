@@ -1,3 +1,4 @@
+from functools import cached_property
 from typing import List, Union
 import numpy as np
 import trimesh
@@ -267,6 +268,11 @@ class MeshMeasurements():
     _AVG_HEIGHT = {
         'male': 1.8,
         'female': 1.7
+    }
+    
+    INT_TO_GENDER = {
+        1: 'male',
+        2: 'female'
     }
     
     def __init__(
@@ -585,7 +591,14 @@ class MeasurementsCollection():
     
     def __init__(self, measurement_objects: List[MeshMeasurements]):
         self._objects = measurement_objects
-        self.all = np.array([x.all for x in measurement_objects])
+        
+    @cached_property
+    def all(self):
+        return np.array([x.all for x in self._objects])
+    
+    @cached_property
+    def volume(self):
+        return np.array([x.volume for x in self._objects])
         
     def __getattr__(self, label: str) -> np.ndarray:
         if ord(label) >= ord('A') and ord(label) <= ord('P'):

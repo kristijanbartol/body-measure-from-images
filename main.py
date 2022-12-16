@@ -1,27 +1,69 @@
+import argparse
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
 
-from src.data import extract_training_data
+from src.model import AllModelsEnum, Model
+from src.evaluate import evaluate
+from src.data import Dataset
+from src.utils import dotdict
+from src.const import *
+
+
+def run(args):
+    X, y = Dataset(args.gt_features).get_data(
+        feature_type=args.feature_type,
+        seg_position=args.seg_position,
+        output_set=args.output_set
+    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+    model = Model(getattr(AllModelsEnum, args.model))
+    reg = model.fit(X_train, y_train)
+    y_pred = reg.predict(X_test)
+    evaluate(y_pred, y_test)
+    
+    
+def run_all():
+    for are_gt_features in [True, False]:
+        for silh_model in SILH_MODEL_CHOICES:
+            for feature_type in FEATURE_TYPE_CHOICES:
+                for seg_position in SEG_POSITION_CHOICES:
+                    for output_set in OUTPUT_SET_CHOICES:
+                        for model_str in MODEL_CHOICES:
+                            args_dict = {
+                                'gt_features': are_gt_features,
+                                'silh_model': silh_model,
+                                'feature_type': feature_type,
+                                'seg_position': seg_position,
+                                'output_set': output_set,
+                                'model': model_str
+                            }
+                            args_dotdict = dotdict(args_dict)
+                            run(args_dotdict)
 
 
 if __name__ == '__main__':
     np.random.seed(2022)
-    gt_data = extract_training_data()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--gt_features', dest='gt_features', action='store_true',
+                        help='whether to use GT features (GT silhouette and/or keypoints)')
+    parser.add_argument('--feature_type', type=str, default='density', 
+                        choices=FEATURE_TYPE_CHOICES,
+                        help='density is a single number per silhouette, slices use kpts, '
+                             'fragments take each row of the silhouettes')
+    parser.add_argument('--seg_position', type=str, default='both', 
+                        choices=SEG_POSITION_CHOICES,
+                        help='camera viewpoint, either front or side, or both')
+    parser.add_argument('--output_set', type=str, default='all',
+                        choices=OUTPUT_SET_CHOICES,
+                        help='output data, either all measures, volume-only, or particular measure (A-P)')
+    parser.add_argument('--model', type=str, default='linear_regressor',
+                        choices=MODEL_CHOICES,
+                        help='which regression model to fit')
+    parser.add_argument('--run_all', dest='run_all', action='store_true',
+                        help='whether to run all possible setup configurations')
+    args = parser.parse_args()
     
-    front_dens_train, front_dens_test, side_dens_train, side_dens_test, measures_train, measures_test = \
-        train_test_split(gt_data.front_densities, gt_data.side_densities, gt_data.measures.all, test_size=0.33)
-    model = LinearRegression()
-    
-    X_train = np.expand_dims(front_dens_train, 1)
-    y_train = measures_train
-    X_test = np.expand_dims(front_dens_test, 1)
-    y_test = measures_test
-    
-    reg = model.fit(X_train, y_train)
-    y_predict = reg.predict(X_test)
-    
-    for idx in range(y_predict.shape[0]):
-        for meas_idx in range(y_predict.shape[1]):
-            print(f'{meas_idx}) {y_predict[idx][meas_idx] * 100.}, {y_test[idx][meas_idx] * 100.}')
-    
+    if args.run_all:
+        run_all()
+    else:
+        run(args)
