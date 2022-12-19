@@ -11,7 +11,7 @@ from src.features import Features, FeaturesCollection
 from src.measures import MeasurementsCollection, MeshMeasurements
 
 
-DATA_ROOT = './data/generated/'
+DATA_ROOT = './dataset/generated/'
 BETAS_PATH = os.path.join(DATA_ROOT, 'betas.npy')
 GENDERS_PATH = os.path.join(DATA_ROOT, 'genders.npy')
     
@@ -36,16 +36,14 @@ class Dataset():
     def __init__(
             self, 
             are_gt_features: bool = True,
-            silh_model: str = Features.POINTREND,
             feature_type: str = 'density'
         ) -> None:
         self.training_data = self._extract_data(
-            are_gt_features, silh_model)
+            are_gt_features)
     
     @staticmethod
     def _extract_data(
-            are_gt: bool,
-            silh_model: str
+            are_gt: bool
         ) -> Tuple[FeaturesCollection, MeasurementsCollection]:
         all_betas = np.load(BETAS_PATH)
         all_genders = np.load(GENDERS_PATH)
@@ -57,8 +55,7 @@ class Dataset():
             features_array.append(
                 Features(
                     sample_idx=sample_idx,
-                    are_gt=are_gt,
-                    silh_model=silh_model)
+                    are_gt=are_gt)
                 )
             measures_array.append(
                 MeshMeasurements(

@@ -17,28 +17,26 @@ def run(args):
     )
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
     model = Model(getattr(AllModelsEnum, args.model))
-    reg = model.fit(X_train, y_train)
-    y_pred = reg.predict(X_test)
-    evaluate(y_pred, y_test)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    evaluate(y_pred, y_test, args.output_set)
     
     
 def run_all():
     for are_gt_features in [True, False]:
-        for silh_model in SILH_MODEL_CHOICES:
-            for feature_type in FEATURE_TYPE_CHOICES:
-                for seg_position in SEG_POSITION_CHOICES:
-                    for output_set in OUTPUT_SET_CHOICES:
-                        for model_str in MODEL_CHOICES:
-                            args_dict = {
-                                'gt_features': are_gt_features,
-                                'silh_model': silh_model,
-                                'feature_type': feature_type,
-                                'seg_position': seg_position,
-                                'output_set': output_set,
-                                'model': model_str
-                            }
-                            args_dotdict = dotdict(args_dict)
-                            run(args_dotdict)
+        for feature_type in FEATURE_TYPE_CHOICES:
+            for seg_position in SEG_POSITION_CHOICES:
+                for output_set in OUTPUT_SET_CHOICES:
+                    for model_str in MODEL_CHOICES:
+                        args_dict = {
+                            'gt_features': are_gt_features,
+                            'feature_type': feature_type,
+                            'seg_position': seg_position,
+                            'output_set': output_set,
+                            'model': model_str
+                        }
+                        args_dotdict = dotdict(args_dict)
+                        run(args_dotdict)
 
 
 if __name__ == '__main__':

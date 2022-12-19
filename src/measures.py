@@ -197,6 +197,15 @@ class MeshMeasurements():
         SMPL mesh.
     '''
     
+    _LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
+               'L', 'M', 'N', 'O', 'P']
+    
+    _NAMES = [
+        'head', 'neck', 'shoulder_to_crotch', 'chest', 'waist', 'hip', 
+        'wrist', 'bicep', 'forearm', 'arm', 'inside_leg', 'thigh', 'calf',
+        'ankle', 'shoulder', 'overall'
+    ]
+    
     _LABELS_TO_NAMES = {
         'A': 'head',
         'B': 'neck',

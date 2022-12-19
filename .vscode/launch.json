@@ -13,7 +13,7 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
-                //"--gt_features"
+                "--gt_features", "--seg_position", "front"
             ]
         }
     ]

@@ -47,6 +47,14 @@ class Model(BaseEstimator):
         model: Optional[Union[BaseEstimator, xgb.Booster]] = LinearRegression
     ) -> None:
         self.model = model()
+        self.fitted_model = None
 
     def fit(self, X, y):
-        return self.model.fit(X, y)
+        if len(X.shape) == 1:
+            X = X.reshape(-1, 1)
+        self.fitted_model = self.model.fit(X, y)
+    
+    def predict(self, X):
+        if len(X.shape) == 1:
+            X = X.reshape(-1, 1)
+        return self.fitted_model.predict(X)

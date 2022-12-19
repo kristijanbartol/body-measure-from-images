@@ -1,11 +1,10 @@
-from features import Features
-from .model import AllModelsEnum
+from enum import Enum
+import sys
+sys.path.append('/media/kristijan/kristijan-hdd-ex/ShapeFromImages')
 
+from src.features import Features
+from src.model import AllModelsEnum
 
-SILH_MODEL_CHOICES = [
-    Features.POINTREND,
-    Features.MASK_RCNN
-]
 
 FEATURE_TYPE_CHOICES = [
     'density', 
