@@ -1,4 +1,5 @@
 import argparse
+import torch
 import numpy as np
 from sklearn.model_selection import train_test_split
 
@@ -10,12 +11,19 @@ from src.const import *
 
 
 def run(args):
-    X, y = Dataset(args.gt_features).get_data(
+    silh_model = None
+    if not args.gt_features:
+        silh_model = torch.hub.load(
+            'pytorch/vision:v0.7.0', 'deeplabv3_resnet50', pretrained=True)
+        silh_model.eval()
+        
+    X, y = Dataset(silh_model).get_data(
         feature_type=args.feature_type,
         seg_position=args.seg_position,
         output_set=args.output_set
     )
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+    
     model = Model(getattr(AllModelsEnum, args.model))
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)

@@ -2,7 +2,6 @@ from enum import Enum
 import sys
 sys.path.append('/media/kristijan/kristijan-hdd-ex/ShapeFromImages')
 
-from src.features import Features
 from src.model import AllModelsEnum
 
 

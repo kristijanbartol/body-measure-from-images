@@ -4,8 +4,14 @@ import numpy as np
 import trimesh
 import torch
 
-from .smpl import create_model, set_shape
+from src.smpl import create_model, set_shape
     
+    
+INT_TO_GENDER = {
+    1: 'male',
+    2: 'female'
+}
+
     
 class MeasurementType():
     ''' Measurement type class.
@@ -277,11 +283,6 @@ class MeshMeasurements():
     _AVG_HEIGHT = {
         'male': 1.8,
         'female': 1.7
-    }
-    
-    INT_TO_GENDER = {
-        1: 'male',
-        2: 'female'
     }
     
     def __init__(
@@ -596,25 +597,18 @@ class MeshMeasurements():
         return measures_str
 
 
-class MeasurementsCollection():
-    
-    def __init__(self, measurement_objects: List[MeshMeasurements]):
-        self._objects = measurement_objects
-        
-    @cached_property
-    def all(self):
-        return np.array([x.all for x in self._objects])
-    
-    @cached_property
-    def volume(self):
-        return np.array([x.volume for x in self._objects])
-        
-    def __getattr__(self, label: str) -> np.ndarray:
-        if ord(label) >= ord('A') and ord(label) <= ord('P'):
-            return [x[label] for x in self._objects]
-        else:
-            print('WARNING: Unknown attribute.')
-            return [0.] * self.all.shape[0]
+def extract_measures(gender: int, betas: np.ndarray):
+    return MeshMeasurements(
+        gender=INT_TO_GENDER[gender], 
+        shape=torch.tensor(betas, dtype=torch.float32).unsqueeze(0)
+    )
+
+
+def get_measurements_array(
+        measures_objects_list: List[MeshMeasurements],
+        output_set: str
+    ) -> np.ndarray:
+    return np.array([getattr(x, output_set) for x in measures_objects_list])
 
 
 if __name__ == '__main__':
