@@ -1,4 +1,4 @@
-import os
+import numpy as np
 import cv2
 
 from torchvision import transforms
@@ -38,3 +38,11 @@ def prepare_img(rgb_path, resize):
             interpolation=cv2.INTER_LINEAR)
     input_tensor = preprocess(rgb_img)
     return input_tensor.unsqueeze(0)
+
+
+def bool_to_img(silh: np.array) -> np.array:
+    return np.expand_dims(silh.astype(np.int8) * 255, axis=-1)
+
+
+def img_to_bool(img: np.array) -> np.array:
+    return img[:, :, 0].astype(bool)

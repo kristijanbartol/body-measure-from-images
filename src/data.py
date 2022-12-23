@@ -17,21 +17,6 @@ DATA_ROOT = './dataset/generated/'
 BETAS_PATH = os.path.join(DATA_ROOT, 'betas.npy')
 GENDERS_PATH = os.path.join(DATA_ROOT, 'genders.npy')
     
-
-class DatasetSpecs():
-    
-    def __init__(
-            self,
-            gt_features: bool = True,
-            feature_type: str = 'density',
-            seg_position: str = 'both',
-            output_set: str = 'all'     # all_measures
-        ) -> None:
-        self.gt_features = gt_features      # bool
-        self.feature_type = feature_type    # density, slices, or fragments
-        self.seg_position = seg_position    # front, side, or both
-        self.output_set = output_set        # all, volume, or (A, B, ...)
-    
     
 class Dataset():
     

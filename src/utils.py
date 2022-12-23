@@ -19,7 +19,7 @@ def prepare_paths(data_root, sample_idx, are_gt):
     rgb_path_front = os.path.join(rgb_dir, fname_front)
     rgb_path_side = os.path.join(rgb_dir, fname_side)
     
-    save_dir = 'seg_gt/' if are_gt is None else 'seg/' 
+    save_dir = 'seg_gt/' if are_gt is None else 'seg_pred/' 
     save_dirpath = os.path.join(data_root, save_dir)
 
     seg_path_front = os.path.join(save_dirpath, fname_front)
