@@ -28,7 +28,7 @@ def pad_to_square(image):
     return image
 
 
-def prepare_img(rgb_path, resize):
+def prepare_img(rgb_path, resize, to_tensor):
     rgb_img = cv2.imread(rgb_path)
     rgb_img = pad_to_square(rgb_img)
     if resize is not None:
@@ -36,8 +36,9 @@ def prepare_img(rgb_path, resize):
             rgb_img_front, 
             (resize, resize),
             interpolation=cv2.INTER_LINEAR)
-    input_tensor = preprocess(rgb_img)
-    return input_tensor.unsqueeze(0)
+    if to_tensor:
+        rgb_img = preprocess(rgb_img).unsqueeze(0)
+    return rgb_img
 
 
 def bool_to_img(silh: np.array) -> np.array:

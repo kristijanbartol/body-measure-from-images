@@ -3,3 +3,5 @@ dataset/
 .venv*/
 .ipynb_checkpoints
 __pycache__
+*.ptl
+pretrained/

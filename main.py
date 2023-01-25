@@ -3,20 +3,22 @@ import torch
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-from src.model import AllModelsEnum, Model
+from src.model import Model, BackboneModel
 from src.evaluate import evaluate
 from src.data import Dataset
 from src.utils import dotdict
-from src.const import *
+from src.const import (
+    MODEL_CHOICES,
+    OUTPUT_SET_CHOICES,
+    FEATURE_TYPE_CHOICES,
+    SEG_POSITION_CHOICES,
+    BACKBONE_MODELS_CHOICES,
+    AllModelsEnum
+)
 
 
 def run(args):
-    silh_model = None
-    if not args.gt_features:
-        silh_model = torch.hub.load(
-            'pytorch/vision:v0.7.0', 'deeplabv3_resnet50', pretrained=True)
-        silh_model.eval()
-        
+    silh_model = BackboneModel(args.backbone_model)
     X, y = Dataset(silh_model).get_data(
         feature_type=args.feature_type,
         seg_position=args.seg_position,
@@ -26,6 +28,8 @@ def run(args):
     
     model = Model(getattr(AllModelsEnum, args.model))
     model.fit(X_train, y_train)
+    model.log()
+    
     y_pred = model.predict(X_test)
     evaluate(y_pred, y_test, args.output_set)
     
@@ -50,8 +54,9 @@ def run_all():
 if __name__ == '__main__':
     np.random.seed(2022)
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gt_features', dest='gt_features', action='store_true',
-                        help='whether to use GT features (GT silhouette and/or keypoints)')
+    parser.add_argument('--backbone_model', type=str, default='gt',
+                        choices=BACKBONE_MODELS_CHOICES,
+                        help='which silhouette extraction model to use. In case of GT, ground-truth is used')
     parser.add_argument('--feature_type', type=str, default='density', 
                         choices=FEATURE_TYPE_CHOICES,
                         help='density is a single number per silhouette, slices use kpts, '

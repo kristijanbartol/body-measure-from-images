@@ -5,3 +5,4 @@ tqdm
 trimesh
 smplx
 scikit-image==0.16.2
+#=-e 'git+https://github.com/facebookresearch/detectron2.git'#egg=detectron2

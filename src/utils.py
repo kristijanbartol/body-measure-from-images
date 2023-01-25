@@ -11,7 +11,7 @@ class dotdict(dict):
     __delattr__ = dict.__delitem__
 
 
-def prepare_paths(data_root, sample_idx, are_gt):
+def prepare_paths(data_root, sample_idx, silh_model_name):
     fname_front = f'{sample_idx:04d}_front.png'
     fname_side = f'{sample_idx:04d}_side.png'
     
@@ -19,8 +19,11 @@ def prepare_paths(data_root, sample_idx, are_gt):
     rgb_path_front = os.path.join(rgb_dir, fname_front)
     rgb_path_side = os.path.join(rgb_dir, fname_side)
     
-    save_dir = 'seg_gt/' if are_gt is None else 'seg_pred/' 
+    save_dir = f'seg_{silh_model_name}'
     save_dirpath = os.path.join(data_root, save_dir)
+    
+    if not os.path.exists(save_dirpath):
+        os.makedirs(save_dirpath)
 
     seg_path_front = os.path.join(save_dirpath, fname_front)
     seg_path_side = os.path.join(save_dirpath, fname_side)

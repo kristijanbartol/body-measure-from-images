@@ -9,7 +9,8 @@ from src.image_utils import (
     bool_to_img,
     img_to_bool
 )
-from src.utils import prepare_paths
+from .utils import prepare_paths
+from .model import BackboneModel
 
 
 IMG_DIR = './demo'
@@ -73,15 +74,18 @@ def collect_features(silh):
 
 
 def extract_silhouette(silh_model, rgb_path, resize):
-    input_batch = prepare_img(rgb_path, resize)
-    with torch.no_grad():
-        silh_array = silh_model(input_batch)['out'][0].cpu().detach().numpy()
-    argmax_array = np.argmax(silh_array, axis=0)
-    return argmax_array == PERSON_CLASS
+    to_tensor = True if silh_model.model_name == 'deeplabv3' else False
+    input_batch = prepare_img(rgb_path, resize, to_tensor)
+    return silh_model(input_batch)
 
 
-def extract_features(data_root, sample_idx, resize, silh_model=None):
-    paths = prepare_paths(data_root, sample_idx, silh_model is None)
+def extract_features(
+        data_root: str, 
+        sample_idx: int, 
+        silh_model: BackboneModel,
+        resize: int = None
+    ) -> Dict:
+    paths = prepare_paths(data_root, sample_idx, silh_model.model_name)
     
     if not os.path.exists(paths['seg_path_front']) \
             or not os.path.exists(paths['seg_path_side']):

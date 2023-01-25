@@ -13,7 +13,7 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
-                "--seg_position", "front"
+                "--seg_position", "front", "--backbone_model", "maskrcnn"
             ]
         }
     ]

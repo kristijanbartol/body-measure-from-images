@@ -9,8 +9,9 @@ if __name__ == '__main__':
     import sys
     sys.path.append('/media/kristijan/kristijan-hdd-ex/ShapeFromImages')
 
-from src.features import extract_features, get_features_array
-from src.measures import extract_measures, get_measurements_array
+from .features import extract_features, get_features_array
+from .measures import extract_measures, get_measurements_array
+from .model import BackboneModel
 
 
 DATA_ROOT = './dataset/generated/'
@@ -22,7 +23,7 @@ class Dataset():
     
     def __init__(
             self, 
-            silh_model: DeepLabV3 = None,
+            silh_model: BackboneModel,
             img_size: int = None
         ) -> None:
         self.img_size = img_size
@@ -32,7 +33,7 @@ class Dataset():
     
     def _extract_data(
             self,
-            silh_model: DeepLabV3 = None
+            silh_model: BackboneModel
         ) -> Tuple[List[Dict[str, Dict[str, Number]]], 
                    List[Dict[str, Dict[str, Number]]]]:
         all_betas = np.load(BETAS_PATH)
@@ -46,8 +47,8 @@ class Dataset():
                 extract_features(
                     self.data_root, 
                     sample_idx, 
+                    silh_model,
                     self.img_size, 
-                    silh_model
                 )
             )
             measures_list.append(
